@@ -1,9 +1,31 @@
-import streamlit as st
-from pypdf import PdfReader
-from google import genai
-import asyncio
-import edge_tts
 import os
+import sys
+import subprocess
+
+# حيلة برمجية ذكية لتثبيت المكتبات إجبارياً داخل السيرفر
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+try:
+    from pypdf import PdfReader
+except ImportError:
+    install("pypdf")
+    from pypdf import PdfReader
+
+try:
+    from google import genai
+except ImportError:
+    install("google-genai")
+    from google import genai
+
+try:
+    import edge_tts
+except ImportError:
+    install("edge-tts")
+    import edge_tts
+
+import streamlit as st
+import asyncio
 
 st.set_page_config(page_title="منصة الشرح الذكي", layout="centered")
 
