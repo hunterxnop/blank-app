@@ -8,9 +8,9 @@ import os
 st.set_page_config(page_title="منصة الشرح الذكي", layout="centered")
 
 st.title("🎓 منصة الشرح الآلي الذكي للطلاب")
-st.write("ارفع ملف المادة الخاص بك، وسيقوم الذكاء الاصطناعي بصناعة سيناريو شرح مسموع لك كالمذيع التلفزيوني!")
+st.write("ارفع ملف المادة الخاص بك، وسيقوم الذكاء الاصطناعي بصناعة سيناريو شرح مسموع لك!")
 
-subject_name = st.text_input("📚 اسم المادة الدراسية:", placeholder="مثال: علم الأحياء، تاريخ، برمجيات...")
+subject_name = st.text_input("📚 اسم المادة الدراسية:", placeholder="مثال: علم الأحياء، تاريخ...")
 uploaded_file = st.file_uploader("📂 ارفع ملف الدرس (صيغة PDF فقط):", type=["pdf"])
 
 def extract_text(file):
@@ -34,7 +34,7 @@ if st.button("🚀 ابدأ توليد الشرح الآن"):
                 file_text = extract_text(uploaded_file)
                 client = genai.Client(api_key=st.secrets.get("GEMINI_API_KEY", "YOUR_API_KEY"))
                 
-                prompt = f"أنت أستاذ جامعي متمكن تشرح للطلاب بأسلوب مبسط وشيق جداً ومباشر للامتحان. المادة: {subject_name}. المحتوى المرفق: {file_text[:3000]}. اكتب نصاً مسترسلاً باللغة العربية الفصحى المفهومة يشرح هذا المحتوى بالكامل ليكون جاهزاً لإلقائه صوتياً."
+                prompt = f"أنت أستاذ جامعي متمكن تشرح للطلاب بأسلوب مبسط وشيق جداً ومباشر للامتحان. المادة: {subject_name}. المحتوى المرفق: {file_text[:3000]}. اكتب نصاً مسترسلاً باللغة العربية يشرح هذا المحتوى بالكامل."
                 
                 response = client.models.generate_content(
                     model='gemini-1.5-flash',
@@ -46,9 +46,9 @@ if st.button("🚀 ابدأ توليد الشرح الآن"):
                 st.subheader("📝 النص الشارح المتولد:")
                 st.write(explanation_text)
                 
-                with st.spinner("🔊 جاري تحويل الشرح إلى صوت مسموع عالي الجودة..."):
+                with st.spinner("🔊 جاري تحويل الشرح إلى صوت مسموع..."):
                     audio_file = "explanation.mp3"
-                    asyncio.run(generate_voice(explanation_text[:1000], audio_file))
+                    asyncio.run(generate_voice(explanation_text[:800], audio_file))
                     
                     st.subheader("🎧 استمع إلى الشرح الصوتي للمادة:")
                     st.audio(audio_file, format="audio/mp3")
