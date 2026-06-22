@@ -1,6 +1,58 @@
 import streamlit as st
+from pypdf import PdfReader
+from google import genai
+import asyncio
+import edge_tts
+import os
 
-st.title("🎈 My new app")
-st.write(
-    "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
-)
+st.set_page_config(page_title="منصة الشرح الذكي", layout="centered")
+
+st.title("🎓 منصة الشرح الآلي الذكي للطلاب")
+st.write("ارفع ملف المادة الخاص بك، وسيقوم الذكاء الاصطناعي بصناعة سيناريو شرح مسموع لك كالمذيع التلفزيوني!")
+
+subject_name = st.text_input("📚 اسم المادة الدراسية:", placeholder="مثال: علم الأحياء، تاريخ، برمجيات...")
+uploaded_file = st.file_uploader("📂 ارفع ملف الدرس (صيغة PDF فقط):", type=["pdf"])
+
+def extract_text(file):
+    reader = PdfReader(file)
+    text = ""
+    for page in reader.pages:
+        content = page.extract_text()
+        if content: text += content + "\n"
+    return text
+
+async def generate_voice(text, output_path):
+    communicate = edge_tts.Communicate(text, "ar-EG-ShakirNeural")
+    await communicate.save(output_path)
+
+if st.button("🚀 ابدأ توليد الشرح الآن"):
+    if not subject_name or not uploaded_file:
+        st.error("الرجاء إدخال اسم المادة ورفع ملف الـ PDF أولاً.")
+    else:
+        with st.spinner("⏳ جاري قراءة الملف وتحليله عبر Gemini..."):
+            try:
+                file_text = extract_text(uploaded_file)
+                client = genai.Client(api_key=st.secrets.get("GEMINI_API_KEY", "YOUR_API_KEY"))
+                
+                prompt = f"أنت أستاذ جامعي متمكن تشرح للطلاب بأسلوب مبسط وشيق جداً ومباشر للامتحان. المادة: {subject_name}. المحتوى المرفق: {file_text[:3000]}. اكتب نصاً مسترسلاً باللغة العربية الفصحى المفهومة يشرح هذا المحتوى بالكامل ليكون جاهزاً لإلقائه صوتياً."
+                
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=prompt,
+                )
+                
+                explanation_text = response.text
+                st.success("✅ تم توليد سيناريو الشرح بنجاح!")
+                st.subheader("📝 النص الشارح المتولد:")
+                st.write(explanation_text)
+                
+                with st.spinner("🔊 جاري تحويل الشرح إلى صوت مسموع عالي الجودة..."):
+                    audio_file = "explanation.mp3"
+                    asyncio.run(generate_voice(explanation_text[:1000], audio_file))
+                    
+                    st.subheader("🎧 استمع إلى الشرح الصوتي للمادة:")
+                    st.audio(audio_file, format="audio/mp3")
+                    st.balloons()
+                    
+            except Exception as e:
+                st.error(f"حدث خطأ أثناء المعالجة: {str(e)}")
